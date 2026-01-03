@@ -1,0 +1,465 @@
+{% extends 'base.html' %}
+
+{% block title %}My Timetable - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📅 My Weekly Timetable</h1>
+        <p>Your class schedule for <strong>{{ user.course or 'your course' }}</strong>. Free time slots are highlighted
+            in green.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('student.free_time') }}" class="btn btn-primary">
+            <i class="bi bi-clock-history"></i> View Free Time
+        </a>
+    </div>
+</div>
+
+<!-- Weekly Summary Cards -->
+<div class="weekly-summary-cards">
+    {% set total_classes = entries|length %}
+    {% set cancelled = entries|selectattr('status', 'equalto', 'cancelled')|list|length %}
+    {% set scheduled = total_classes - cancelled %}
+    <div class="summary-card">
+        <div class="summary-icon blue"><i class="bi bi-calendar-check"></i></div>
+        <div class="summary-info">
+            <div class="summary-value">{{ scheduled }}</div>
+            <div class="summary-label">Scheduled Classes</div>
+        </div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon red"><i class="bi bi-calendar-x"></i></div>
+        <div class="summary-info">
+            <div class="summary-value">{{ cancelled }}</div>
+            <div class="summary-label">Cancelled</div>
+        </div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon green"><i class="bi bi-clock"></i></div>
+        <div class="summary-info">
+            {% set total_slots = 0 %}
+            {% if weekly_summary %}
+            {% for day, data in weekly_summary.items() %}
+            {% set total_slots = total_slots + data.slot_count %}
+            {% endfor %}
+            {% endif %}
+            <div class="summary-value">{{ total_slots }}</div>
+            <div class="summary-label">Free Slots</div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Grid View -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3><i class="bi bi-calendar-week"></i> Weekly Schedule</h3>
+        <div class="view-toggle">
+            <button class="view-btn active" onclick="showView('grid')">Grid View</button>
+            <button class="view-btn" onclick="showView('list')">List View</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Grid View -->
+        <div id="gridView" class="timetable-grid">
+            {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+            {% for day in days %}
+            <div class="day-column">
+                <div class="day-header">
+                    <span class="day-name">{{ day[:3] }}</span>
+                    <span class="day-full">{{ day }}</span>
+                </div>
+                <div class="day-slots">
+                    {% set day_entries = entries|selectattr('day', 'equalto', day)|list|sort(attribute='start_time') %}
+                    {% if day_entries %}
+                    {% for entry in day_entries %}
+                    <div class="time-slot {{ entry.status }}">
+                        <div class="slot-time-range">
+                            <span class="start">{{ entry.start_time }}</span>
+                            <span class="separator">→</span>
+                            <span class="end">{{ entry.end_time }}</span>
+                        </div>
+                        <div class="slot-status">
+                            {% if entry.status == 'cancelled' %}
+                            <span class="status-badge cancelled"><i class="bi bi-x-circle"></i> Cancelled</span>
+                            {% elif entry.status == 'rescheduled' %}
+                            <span class="status-badge rescheduled"><i class="bi bi-arrow-repeat"></i> Rescheduled</span>
+                            {% else %}
+                            <span class="status-badge scheduled"><i class="bi bi-check-circle"></i> Class</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if schedule %}
+                    {% set day_schedule = schedule|selectattr('day', 'equalto', day)|list if schedule else [] %}
+                    {% for item in day_schedule %}
+                    {% if item.type == 'free_time' %}
+                    <div class="time-slot free-time">
+                        <div class="slot-time-range">
+                            <span class="start">{{ item.start_time }}</span>
+                            <span class="separator">→</span>
+                            <span class="end">{{ item.end_time }}</span>
+                        </div>
+                        <div class="slot-info">
+                            <span class="duration"><i class="bi bi-clock"></i> {{ item.duration_minutes }} min
+                                free</span>
+                        </div>
+                        <a href="{{ url_for('student.recommendations') }}?duration={{ item.duration_minutes }}"
+                            class="slot-action">
+                            Find Activities →
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                    {% else %}
+                    <div class="no-classes">
+                        <span>No classes</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- List View (Hidden by default) -->
+        <div id="listView" class="timetable-list" style="display: none;">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr class="{{ entry.status }}">
+                        <td><strong>{{ entry.day }}</strong></td>
+                        <td>{{ entry.start_time }} - {{ entry.end_time }}</td>
+                        <td>
+                            {% set start_parts = entry.start_time.split(':') %}
+                            {% set end_parts = entry.end_time.split(':') %}
+                            {% set duration = (end_parts[0]|int * 60 + end_parts[1]|int) - (start_parts[0]|int * 60 +
+                            start_parts[1]|int) %}
+                            {{ duration }} mins
+                        </td>
+                        <td>
+                            <span class="status-badge {{ entry.status }}">
+                                {{ entry.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if entry.status == 'cancelled' %}
+                            <a href="{{ url_for('student.recommendations') }}" class="btn btn-sm btn-success">
+                                Use Free Time
+                            </a>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div class="icon">📅</div>
+                                <h4>No timetable available</h4>
+                                <p>Your teacher will update the schedule soon.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Weekly Summary Cards */
+    .weekly-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .summary-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: white;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--gray-200);
+    }
+
+    .summary-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .summary-icon.blue {
+        background: #DBEAFE;
+        color: #2563EB;
+    }
+
+    .summary-icon.red {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .summary-icon.green {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .summary-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--gray-900);
+        line-height: 1;
+    }
+
+    .summary-label {
+        font-size: 13px;
+        color: var(--gray-500);
+        margin-top: 4px;
+    }
+
+    /* View Toggle */
+    .view-toggle {
+        display: flex;
+        gap: 4px;
+        background: var(--gray-100);
+        padding: 4px;
+        border-radius: var(--radius-full);
+    }
+
+    .view-btn {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-full);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--gray-600);
+        transition: all 0.2s;
+    }
+
+    .view-btn.active {
+        background: white;
+        color: var(--gray-900);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Timetable Grid */
+    .timetable-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+    }
+
+    @media (max-width: 992px) {
+        .timetable-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+        .timetable-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .day-column {
+        background: var(--gray-50);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .day-header {
+        background: var(--primary);
+        color: white;
+        padding: 12px 16px;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .day-name {
+        display: none;
+    }
+
+    .day-full {
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .day-name {
+            display: block;
+        }
+
+        .day-full {
+            display: none;
+        }
+    }
+
+    .day-slots {
+        padding: 12px;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .time-slot {
+        background: white;
+        border-radius: var(--radius);
+        padding: 12px;
+        border-left: 4px solid var(--primary);
+    }
+
+    .time-slot.cancelled {
+        border-left-color: #EF4444;
+        opacity: 0.7;
+    }
+
+    .time-slot.cancelled .slot-time-range {
+        text-decoration: line-through;
+        color: var(--gray-400);
+    }
+
+    .time-slot.rescheduled {
+        border-left-color: #F59E0B;
+    }
+
+    .time-slot.free-time {
+        background: linear-gradient(135deg, #D1FAE5 0%, #ECFDF5 100%);
+        border-left-color: #10B981;
+    }
+
+    .slot-time-range {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 14px;
+    }
+
+    .slot-time-range .separator {
+        color: var(--gray-400);
+        font-size: 12px;
+    }
+
+    .slot-status,
+    .slot-info {
+        margin-top: 6px;
+        font-size: 12px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .status-badge.scheduled {
+        background: #DBEAFE;
+        color: #1D4ED8;
+    }
+
+    .status-badge.cancelled {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .status-badge.rescheduled {
+        background: #FEF3C7;
+        color: #B45309;
+    }
+
+    .slot-action {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #059669;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .slot-action:hover {
+        text-decoration: underline;
+    }
+
+    .no-classes {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 100px;
+        color: var(--gray-400);
+        font-size: 13px;
+    }
+
+    /* Modern Table */
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .modern-table th {
+        background: var(--gray-50);
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .modern-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .modern-table tr.cancelled {
+        background: #FEF2F2;
+    }
+</style>
+
+<script>
+    function showView(view) {
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+        const buttons = document.querySelectorAll('.view-btn');
+
+        buttons.forEach(btn => btn.classList.remove('active'));
+
+        if (view === 'grid') {
+            gridView.style.display = 'grid';
+            listView.style.display = 'none';
+            buttons[0].classList.add('active');
+        } else {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+            buttons[1].classList.add('active');
+        }
+    }
+</script>
+{% endblock %}

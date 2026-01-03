@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Activities - {{ user.course }} - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>📚 Activity Management</h1>
+        <p>Create and manage learning activities for <strong>{{ user.course or 'your' }}</strong> department students.
+        </p>
+    </div>
+    <a href="{{ url_for('teacher.add_activity') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create Activity
+    </a>
+</div>
+
+<!-- Department Info Banner -->
+<div class="department-banner mb-4">
+    <div class="dept-icon"><i class="bi bi-book"></i></div>
+    <div class="dept-info">
+        <strong>{{ user.course }}</strong> Department Activities
+    </div>
+    <span class="dept-count">{{ activities|length }} activities</span>
+</div>
+
+<div class="activity-grid">
+    {% for a in activities %}
+    <div class="activity-card">
+        <div class="activity-header">
+            <span class="category-badge {{ a.category|lower }}">
+                {% if a.category == 'Learning' %}📚{% elif a.category == 'Skill' %}🛠️{% elif a.category == 'Wellness'
+                %}🧘{% else %}👥{% endif %}
+                {{ a.category }}
+            </span>
+            {% if not a.course or a.course == 'General' %}
+            <span class="universal-tag">Universal</span>
+            {% endif %}
+        </div>
+        <h4 class="activity-title">{{ a.title }}</h4>
+        {% if a.description %}
+        <p class="activity-description">{{ a.description[:100] }}{% if a.description|length > 100 %}...{% endif %}</p>
+        {% endif %}
+        <div class="activity-meta">
+            <span><i class="bi bi-clock"></i> {{ a.duration_minutes }} mins</span>
+        </div>
+        <div class="activity-actions">
+            <a href="{{ url_for('teacher.edit_activity', activity_id=a.id) }}" class="btn btn-sm btn-outline">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <form action="{{ url_for('teacher.delete_activity_action', activity_id=a.id) }}" method="POST"
+                style="display: inline;">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this activity?');">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state-full">
+        <div class="icon">📚</div>
+        <h4>No activities created for {{ user.course }}</h4>
+        <p>Create learning activities that students can complete during their free time.</p>
+        <a href="{{ url_for('teacher.add_activity') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create First Activity
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .department-banner {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 24px;
+        background: linear-gradient(135deg, var(--primary-lighter) 0%, #EFF6FF 100%);
+        border: 1px solid var(--primary-light);
+        border-radius: var(--radius-lg);
+    }
+
+    .dept-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .dept-info {
+        flex: 1;
+        color: var(--primary);
+    }
+
+    .dept-count {
+        background: white;
+        color: var(--primary);
+        padding: 6px 14px;
+        border-radius: var(--radius-full);
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .activity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .activity-card {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        transition: all 0.2s;
+    }
+
+    .activity-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-md);
+    }
+
+    .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .category-badge.learning {
+        background: #DBEAFE;
+        color: #1D4ED8;
+    }
+
+    .category-badge.skill {
+        background: #FEF3C7;
+        color: #B45309;
+    }
+
+    .category-badge.wellness {
+        background: #D1FAE5;
+        color: #047857;
+    }
+
+    .category-badge.collaboration {
+        background: #EDE9FE;
+        color: #6D28D9;
+    }
+
+    .universal-tag {
+        font-size: 10px;
+        background: var(--gray-100);
+        color: var(--gray-500);
+        padding: 3px 8px;
+        border-radius: var(--radius-full);
+    }
+
+    .activity-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 8px;
+    }
+
+    .activity-description {
+        font-size: 13px;
+        color: var(--gray-500);
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .activity-meta {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding: 12px 0;
+        border-top: 1px solid var(--gray-100);
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .activity-meta span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--gray-600);
+    }
+
+    .activity-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+    }
+
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .empty-state-full {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+    }
+
+    .empty-state-full .icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+
+    .empty-state-full h4 {
+        color: var(--gray-800);
+        margin-bottom: 8px;
+    }
+
+    .empty-state-full p {
+        color: var(--gray-500);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,719 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Welcome back, {{ user.name }}! 👋</h1>
+        <p>{{ user.course or 'No course assigned' }} • Let's make today productive</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('student.history') }}" class="btn btn-secondary">
+            <i class="bi bi-journal-check"></i> My Progress
+        </a>
+    </div>
+</div>
+
+<!-- Progress Overview Cards -->
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.completed }}</div>
+            <div class="stat-label">Activities Completed</div>
+        </div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.total_hours }}h</div>
+            <div class="stat-label">Productive Time</div>
+        </div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon"><i class="bi bi-lightning-charge"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.in_progress }}</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+    <!-- Main Column -->
+    <div class="main-column">
+        <!-- Real-Time Free Time Status -->
+        {% if current_free %}
+        <div class="card current-free-card mb-4">
+            <div class="card-body">
+                <div class="current-free-banner">
+                    <div class="live-indicator">
+                        <span class="live-dot"></span>
+                        <span>LIVE</span>
+                    </div>
+                    <div class="current-free-content">
+                        <h2>⏰ You Have Free Time NOW!</h2>
+                        <div class="time-remaining">
+                            <span class="big-number" id="remaining-minutes">{{ current_free.remaining_minutes }}</span>
+                            <span class="label">minutes remaining</span>
+                        </div>
+                        <p>Until {{ current_free.end_time }} • {{ current_free.reason|replace('_', ' ')|title }}</p>
+                    </div>
+                    <a href="{{ url_for('student.recommendations') }}?duration={{ current_free.remaining_minutes }}"
+                        class="btn btn-lg btn-success">
+                        <i class="bi bi-lightning-charge-fill"></i> Start an Activity Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Free Time Detection -->
+        <div class="card {% if not current_free %}highlight-card{% endif %} mb-4">
+            <div class="card-header">
+                <h3><i class="bi bi-clock-history"></i> {% if current_free %}Upcoming{% else %}Available{% endif %} Free
+                    Time</h3>
+                <a href="{{ url_for('student.free_time') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% set display_slots = upcoming_slots if current_free else free_slots %}
+                {% if display_slots %}
+                <div class="free-time-grid">
+                    {% for slot in display_slots[:3] %}
+                    <div class="free-slot-card {% if slot.is_current %}current{% endif %}">
+                        <div class="slot-header">
+                            <span class="slot-day">{{ slot.day }}</span>
+                            <span class="slot-badge">{{ slot.duration_minutes }} min</span>
+                        </div>
+                        <div class="slot-time">{{ slot.start_time }} - {{ slot.end_time }}</div>
+                        <div class="slot-reason">
+                            {{ slot.reason|replace('_', ' ')|title }}
+                            {% if slot.starts_in_minutes %}
+                            <span class="starts-in">• Starts in {{ slot.starts_in_minutes }} min</span>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('student.recommendations') }}?duration={{ slot.duration_minutes }}"
+                            class="btn btn-primary btn-sm w-100 mt-2">
+                            <i class="bi bi-lightning-charge"></i> Find Activities
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📅</div>
+                    <h4>No {% if current_free %}upcoming{% endif %} free time detected today</h4>
+                    <p>We'll notify you instantly when class cancellations or gaps appear.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Activity Recommendations - Shown with Free Time Context -->
+
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-activity"></i> Recent Activity</h3>
+                <a href="{{ url_for('student.history') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                <div class="activity-timeline">
+                    {% for log in recent_activities[:5] %}
+                    <div class="timeline-item {{ log.status }}">
+                        <div class="timeline-icon">
+                            {% if log.status == 'completed' %}
+                            <i class="bi bi-check-circle-fill"></i>
+                            {% else %}
+                            <i class="bi bi-play-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-content">
+                            <h5>
+                                {% if log.activities %}
+                                <a href="{{ url_for('student.view_activity', activity_id=log.activities.id) }}"
+                                    style="color: inherit; text-decoration: none;">
+                                    {{ log.activities.title }}
+                                </a>
+                                {% else %}
+                                Activity
+                                {% endif %}
+                            </h5>
+                            <div class="timeline-meta">
+                                <span>{{ log.activities.duration_minutes if log.activities else 0 }} mins</span>
+                                <span class="status-badge {{ log.status }}">{{ log.status|replace('_', ' ')|title
+                                    }}</span>
+                                {% if log.status == 'in_progress' %}
+                                <form action="{{ url_for('student.end_activity', log_id=log.id) }}" method="POST"
+                                    style="display: inline; margin-left: 8px;">
+                                    <button type="submit" class="btn btn-success btn-xs"
+                                        style="padding: 2px 8px; font-size: 11px;">
+                                        <i class="bi bi-check"></i> End
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">🚀</div>
+                    <h4>No activities yet</h4>
+                    <p>Start your learning journey today!</p>
+                    <a href="{{ url_for('student.recommendations') }}" class="btn btn-primary">Browse Activities</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar-column">
+
+
+        <!-- Notifications -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3><i class="bi bi-bell"></i> Notifications</h3>
+                {% if unread_count %}
+                <span class="badge badge-danger">{{ unread_count }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if notifications %}
+                <div class="notification-list">
+                    {% for n in notifications[:5] %}
+                    <div class="notification-item {{ 'unread' if not n.is_read else '' }}">
+                        <p>{{ n.message }}</p>
+                        <small>{{ n.created_at[:10] if n.created_at else 'Just now' }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('student.notifications') }}" class="btn btn-sm btn-secondary w-100">View All</a>
+                </div>
+                {% else %}
+                <div class="empty-state small">
+                    <p>No notifications</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-lightning"></i> Quick Actions</h3>
+            </div>
+            <div class="card-body action-buttons">
+                <a href="{{ url_for('student.timetable') }}" class="action-btn">
+                    <i class="bi bi-calendar3"></i>
+                    <span>Timetable</span>
+                </a>
+                <a href="{{ url_for('student.free_time') }}" class="action-btn">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Free Time</span>
+                </a>
+                <a href="{{ url_for('student.history') }}" class="action-btn">
+                    <i class="bi bi-journal-check"></i>
+                    <span>History</span>
+                </a>
+                <a href="{{ url_for('student.notifications') }}" class="action-btn">
+                    <i class="bi bi-bell"></i>
+                    <span>Alerts</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 992px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Enhanced Stat Cards */
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(37, 99, 235, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary);
+    }
+
+    .stat-card.green .stat-icon {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .stat-card.blue .stat-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3B82F6;
+    }
+
+    .stat-card.purple .stat-icon {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8B5CF6;
+    }
+
+    /* Free Time Grid */
+    .free-time-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .free-slot-card {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid var(--primary-light);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        transition: all 0.2s;
+    }
+
+    .free-slot-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    .slot-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .slot-day {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .slot-badge {
+        background: var(--primary);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .slot-time {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .slot-reason {
+        font-size: 13px;
+        color: var(--gray-500);
+        margin-top: 4px;
+    }
+
+    /* Activity Cards */
+    .activity-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .activity-card {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .activity-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .activity-header {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .difficulty-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    .difficulty-badge.easy {
+        background: #D1FAE5;
+        color: #047857;
+    }
+
+    .difficulty-badge.medium {
+        background: #FEF3C7;
+        color: #B45309;
+    }
+
+    .difficulty-badge.hard {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    /* Timeline */
+    .activity-timeline {
+        position: relative;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .timeline-item:last-child {
+        border-bottom: none;
+    }
+
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--gray-100);
+        color: var(--gray-500);
+        flex-shrink: 0;
+    }
+
+    .timeline-item.completed .timeline-icon {
+        background: var(--success-light, #D1FAE5);
+        color: var(--success);
+    }
+
+    .timeline-item.in_progress .timeline-icon {
+        background: var(--primary-light, #DBEAFE);
+        color: var(--primary);
+    }
+
+    .timeline-content h5 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .timeline-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--gray-500);
+    }
+
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+    }
+
+    .status-badge.completed {
+        background: #D1FAE5;
+        color: #047857;
+    }
+
+    .status-badge.in_progress {
+        background: #DBEAFE;
+        color: #1D4ED8;
+    }
+
+    /* Goal Card */
+    .goal-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .goal-card h4 {
+        color: white;
+        margin-top: 8px;
+    }
+
+    .goal-card .text-muted {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .circular-progress {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 3.8;
+    }
+
+    .circle-progress {
+        fill: none;
+        stroke: white;
+        stroke-width: 3.8;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dasharray 0.5s ease;
+    }
+
+    .progress-text {
+        fill: white;
+        font-size: 8px;
+        font-weight: 600;
+        text-anchor: middle;
+    }
+
+    .goal-achieved {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 20px;
+        margin-top: 12px;
+        font-weight: 600;
+    }
+
+    /* Action Buttons Grid */
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 16px;
+        background: var(--gray-50);
+        border-radius: var(--radius);
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: var(--primary-light, #DBEAFE);
+        color: var(--primary);
+    }
+
+    .action-btn i {
+        font-size: 24px;
+    }
+
+    .action-btn span {
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* Card Footer */
+    .card-footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--gray-100);
+    }
+
+    /* Highlight Card */
+    .highlight-card {
+        border: 2px solid var(--primary);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Empty State Small */
+    .empty-state.small {
+        padding: 24px;
+    }
+
+    .empty-state.small p {
+        margin: 0;
+    }
+
+    /* Current Free Time Banner */
+    .current-free-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        overflow: hidden;
+    }
+
+    .current-free-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        color: white;
+        flex-wrap: wrap;
+    }
+
+    .live-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: var(--radius-full);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .live-dot {
+        width: 10px;
+        height: 10px;
+        background: #ff4444;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.5;
+            transform: scale(1.2);
+        }
+    }
+
+    .current-free-content {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .current-free-content h2 {
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        color: white;
+    }
+
+    .current-free-content p {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    .time-remaining {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .time-remaining .big-number {
+        font-size: 48px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .time-remaining .label {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .current-free-card .btn-success {
+        background: white;
+        color: #059669;
+        border: none;
+        font-weight: 600;
+        padding: 14px 28px;
+    }
+
+    .current-free-card .btn-success:hover {
+        background: #f0fdf4;
+        transform: translateY(-2px);
+    }
+
+    /* Slot cards in current state */
+    .free-slot-card.current {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        border-color: #10b981;
+    }
+
+    .starts-in {
+        color: var(--primary);
+        font-weight: 500;
+    }
+
+    /* Auto-refresh indicator */
+    .auto-refresh-notice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--gray-500);
+        margin-top: 16px;
+    }
+
+    .refresh-icon {
+        animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<script>
+    // Auto-refresh every 60 seconds
+    setInterval(function () {
+        fetch('{{ url_for("student.live_status") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.current_free) {
+                    const remainingEl = document.getElementById('remaining-minutes');
+                    if (remainingEl) {
+                        remainingEl.textContent = data.current_free.remaining_minutes;
+                    }
+                }
+                // Update notification count
+                if (data.unread_notifications > 0) {
+                    document.querySelectorAll('.badge-danger').forEach(el => {
+                        el.textContent = data.unread_notifications;
+                    });
+                }
+            })
+            .catch(err => console.log('Status update error:', err));
+    }, 60000);
+</script>
+{% endblock %}

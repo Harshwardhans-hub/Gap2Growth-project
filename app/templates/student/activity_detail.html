@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ activity.title }} - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('student.recommendations') }}" class="btn btn-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Back to Recommendations
+    </a>
+</div>
+
+<!-- Hidden data container for JavaScript -->
+<div id="activityData" data-log-id="{{ active_log.id if active_log else '' }}"
+    data-start-time="{{ active_log.start_time if active_log else '' }}" data-duration="{{ activity.duration_minutes }}"
+    data-activity-id="{{ activity.id }}" data-history-url="{{ url_for('student.history') }}" style="display: none;">
+</div>
+
+<div style="max-width: 700px;">
+    <div class="card">
+        <div class="card-body" style="padding: 32px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <span class="category-badge {{ activity.category|lower }}">{{ activity.category }}</span>
+            </div>
+
+            <h1 style="font-size: 28px; margin-bottom: 24px;">{{ activity.title }}</h1>
+
+            <div class="stat-cards" style="margin-bottom: 24px;">
+                <div class="stat-card" style="padding: 16px; text-align: center;">
+                    <div class="stat-value" style="font-size: 24px;">{{ activity.duration_minutes }}</div>
+                    <div class="stat-label">Minutes</div>
+                </div>
+            </div>
+
+            {% if activity.course %}
+            <p class="mb-4"><i class="bi bi-book"></i> <strong>Course:</strong> {{ activity.course }}</p>
+            {% endif %}
+
+            <!-- Free Time Status Banner -->
+            {% if current_free %}
+            <div
+                style="background: var(--success-light); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--success);">
+                <i class="bi bi-clock" style="color: var(--success);"></i>
+                <strong style="color: var(--success);">You're in free time!</strong>
+                <span>{{ current_free.remaining_minutes }} minutes remaining until {{ current_free.end_time }}</span>
+            </div>
+            {% else %}
+            <div
+                style="background: var(--warning-light); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--warning);">
+                <i class="bi bi-exclamation-triangle" style="color: var(--warning);"></i>
+                <strong style="color: var(--warning);">No free time detected</strong>
+                <span>You can only start activities during your scheduled free time.</span>
+            </div>
+            {% endif %}
+
+            {% if current_free and not can_start %}
+            <div
+                style="background: var(--danger-light); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--danger);">
+                <i class="bi bi-x-circle" style="color: var(--danger);"></i>
+                <strong style="color: var(--danger);">Activity too long</strong>
+                <span>This activity takes {{ activity.duration_minutes }} minutes but you only have {{
+                    current_free.remaining_minutes }} minutes of free time.</span>
+            </div>
+            {% endif %}
+
+            <div style="background: var(--info-light); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                <i class="bi bi-info-circle" style="color: var(--info);"></i>
+                <strong style="color: var(--info);">Tip:</strong> Start the activity when you're ready to focus. Your
+                progress will be tracked automatically.
+            </div>
+
+            {% if current_free and can_start %}
+            <button class="btn btn-primary btn-lg w-100" id="startBtn" onclick="handleStartActivity()"
+                style="{% if active_log %}display: none;{% endif %}">
+                <i class="bi bi-play-fill"></i> Start Activity
+            </button>
+            {% elif not active_log %}
+            <button class="btn btn-secondary btn-lg w-100" disabled>
+                <i class="bi bi-play-fill"></i> Cannot Start - {% if not current_free %}No Free Time{% else %}Activity
+                Too Long{% endif %}
+            </button>
+            {% endif %}
+
+            <div id="activityInProgress" style="{% if not active_log %}display: none;{% endif %} margin-top: 24px;">
+                <div style="background: var(--success-light); padding: 20px; border-radius: 8px;">
+                    <h4 style="color: var(--success);"><i class="bi bi-hourglass-split"></i> Activity in Progress</h4>
+                    <div id="timerDisplay"
+                        style="font-size: 32px; font-weight: bold; color: var(--success); margin: 15px 0;">
+                        --:--
+                    </div>
+                    <p id="timerMessage">Complete the full activity duration before you can finish.</p>
+                    <button class="btn btn-secondary" id="completeBtn" onclick="handleCompleteActivity()" disabled>
+                        <i class="bi bi-lock"></i> <span id="completeBtnText">Wait for Timer</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="errorMessage"
+                style="display: none; background: var(--danger-light); padding: 16px; border-radius: 8px; margin-top: 16px; border-left: 4px solid var(--danger);">
+                <i class="bi bi-exclamation-triangle" style="color: var(--danger);"></i>
+                <strong style="color: var(--danger);">Error:</strong>
+                <span id="errorText"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get data from HTML data attributes
+    var dataEl = document.getElementById('activityData');
+    var currentLogId = dataEl.dataset.logId || null;
+    var startTime = dataEl.dataset.startTime || null;
+    var durationMinutes = parseInt(dataEl.dataset.duration) || 0;
+    var activityId = dataEl.dataset.activityId;
+    var historyUrl = dataEl.dataset.historyUrl;
+    var timerInterval;
+
+    function showError(message) {
+        document.getElementById('errorText').textContent = message;
+        document.getElementById('errorMessage').style.display = 'block';
+        setTimeout(function () {
+            document.getElementById('errorMessage').style.display = 'none';
+        }, 5000);
+    }
+
+    function startTimer() {
+        if (!startTime || !durationMinutes) return;
+
+        var start = new Date(startTime).getTime();
+        var end = start + (durationMinutes * 60 * 1000);
+        var completeBtn = document.getElementById('completeBtn');
+        var completeBtnText = document.getElementById('completeBtnText');
+        var timerMessage = document.getElementById('timerMessage');
+
+        function updateTimer() {
+            var now = new Date().getTime();
+            var distance = end - now;
+
+            if (distance < 0) {
+                clearInterval(timerInterval);
+                document.getElementById('timerDisplay').innerHTML = "Time Complete! ✓";
+                document.getElementById('timerDisplay').style.color = "var(--success)";
+
+                // Enable the complete button
+                completeBtn.disabled = false;
+                completeBtn.classList.remove('btn-secondary');
+                completeBtn.classList.add('btn-success', 'pulse-animation');
+                completeBtnText.innerHTML = '<i class="bi bi-check-circle"></i> Complete Activity';
+                timerMessage.textContent = 'Great job! You can now complete this activity.';
+                return;
+            }
+
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('timerDisplay').innerHTML = minutes + "m " + seconds + "s remaining";
+
+            // Keep button disabled with remaining time shown
+            completeBtnText.textContent = 'Wait ' + minutes + 'm ' + seconds + 's';
+        }
+
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    if (startTime) {
+        startTimer();
+    }
+
+    function handleStartActivity() {
+        fetch('/student/activity/' + activityId + '/start', { method: 'POST' })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    currentLogId = data.log_id;
+                    startTime = new Date().toISOString();
+                    document.getElementById('startBtn').style.display = 'none';
+                    document.getElementById('activityInProgress').style.display = 'block';
+                    startTimer();
+                } else {
+                    showError(data.error || 'Failed to start activity');
+                }
+            })
+            .catch(function (e) {
+                console.error('Error:', e);
+                showError('Network error. Please try again.');
+            });
+    }
+
+    function handleCompleteActivity() {
+        if (currentLogId) {
+            fetch('/student/activity/' + currentLogId + '/complete', { method: 'POST' })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        window.location.href = historyUrl;
+                    } else {
+                        showError(data.error || 'Failed to complete activity');
+                    }
+                })
+                .catch(function (e) {
+                    console.error('Error:', e);
+                    showError('Network error. Please try again.');
+                });
+        }
+    }
+</script>
+<style>
+    .pulse-animation {
+        animation: pulse-btn 2s infinite;
+    }
+
+    @keyframes pulse-btn {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        }
+
+        70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+</style>
+{% endblock %}

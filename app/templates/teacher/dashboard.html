@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Welcome, {{ user.name }}! 📚</h1>
+        <p>{{ user.course or 'No course assigned' }} • Manage your classes and activities</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('teacher.add_activity') }}" class="btn btn-secondary">
+            <i class="bi bi-plus-circle"></i> New Activity
+        </a>
+        <a href="{{ url_for('teacher.add_timetable') }}" class="btn btn-primary">
+            <i class="bi bi-calendar-plus"></i> Add Class
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ timetable|length }}</div>
+            <div class="stat-label">Scheduled Classes</div>
+        </div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon"><i class="bi bi-collection"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ activities|length }}</div>
+            <div class="stat-label">Activities Created</div>
+        </div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon"><i class="bi bi-people"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ students|length }}</div>
+            <div class="stat-label">Students Enrolled</div>
+        </div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ completions_count }}</div>
+            <div class="stat-label">Activity Completions</div>
+        </div>
+    </div>
+</div>
+
+<div class="teacher-dashboard-grid">
+    <!-- Main Column -->
+    <div class="main-column">
+        <!-- Weekly Schedule -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3><i class="bi bi-calendar-week"></i> This Week's Schedule</h3>
+                <a href="{{ url_for('teacher.timetable') }}" class="btn btn-sm btn-secondary">Manage Schedule</a>
+            </div>
+            <div class="card-body">
+                {% if timetable %}
+                <div class="schedule-grid">
+                    {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] %}
+                    {% for day in days %}
+                    <div class="day-column">
+                        <div class="day-header">{{ day[:3] }}</div>
+                        {% set day_entries = timetable|selectattr('day', 'equalto', day)|list %}
+                        {% if day_entries %}
+                        {% for entry in day_entries %}
+                        <div class="class-slot {{ entry.status }}">
+                            <div class="slot-time">{{ entry.start_time }}</div>
+                            <div class="slot-end">{{ entry.end_time }}</div>
+                            {% if entry.status == 'cancelled' %}
+                            <span class="cancelled-badge">Cancelled</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="no-class">—</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📅</div>
+                    <h4>No classes scheduled</h4>
+                    <p>Add your first class to start helping students utilize downtime.</p>
+                    <a href="{{ url_for('teacher.add_timetable') }}" class="btn btn-primary">Add Class Schedule</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-collection"></i> Your Activities</h3>
+                <a href="{{ url_for('teacher.activities_list') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if activities %}
+                <div class="activities-list">
+                    {% for activity in activities[:6] %}
+                    <div class="activity-item">
+                        <div class="activity-icon {{ activity.category|lower }}">
+                            {% if activity.category == 'Learning' %}<i class="bi bi-book"></i>
+                            {% elif activity.category == 'Skill' %}<i class="bi bi-tools"></i>
+                            {% elif activity.category == 'Wellness' %}<i class="bi bi-heart"></i>
+                            {% else %}<i class="bi bi-people"></i>{% endif %}
+                        </div>
+                        <div class="activity-details">
+                            <h5>{{ activity.title }}</h5>
+                            <div class="activity-meta">
+                                <span><i class="bi bi-clock"></i> {{ activity.duration_minutes }} min</span>
+                                <span><i class="bi bi-bar-chart"></i> {{ activity.difficulty }}</span>
+                                <span class="category-tag {{ activity.category|lower }}">{{ activity.category }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('teacher.edit_activity', activity_id=activity.id) }}"
+                            class="btn btn-sm btn-outline">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">🎯</div>
+                    <h4>No activities created</h4>
+                    <p>Create activities for students to complete during their free time.</p>
+                    <a href="{{ url_for('teacher.add_activity') }}" class="btn btn-primary">Create Activity</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar-column">
+        <!-- Students Overview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3><i class="bi bi-mortarboard"></i> Your Students</h3>
+                <a href="{{ url_for('teacher.students_list') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if students %}
+                <div class="student-list">
+                    {% for student in students[:5] %}
+                    <div class="student-item">
+                        <div class="student-avatar">{{ student.name[:1]|upper }}</div>
+                        <div class="student-info">
+                            <div class="student-name">{{ student.name }}</div>
+                            <div class="student-email">{{ student.email }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if students|length > 5 %}
+                <div class="card-footer text-center">
+                    <small class="text-muted">+{{ students|length - 5 }} more students</small>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="empty-state small">
+                    <p>No students enrolled yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-lightning"></i> Quick Actions</h3>
+            </div>
+            <div class="card-body action-buttons">
+                <a href="{{ url_for('teacher.add_timetable') }}" class="action-btn primary">
+                    <i class="bi bi-calendar-plus"></i>
+                    <span>Add Class</span>
+                </a>
+                <a href="{{ url_for('teacher.add_activity') }}" class="action-btn">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>New Activity</span>
+                </a>
+                <a href="{{ url_for('teacher.timetable') }}" class="action-btn">
+                    <i class="bi bi-calendar3"></i>
+                    <span>Schedule</span>
+                </a>
+                <a href="{{ url_for('teacher.students_list') }}" class="action-btn">
+                    <i class="bi bi-people"></i>
+                    <span>Students</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Teacher Dashboard Grid */
+    .teacher-dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 992px) {
+        .teacher-dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Enhanced Stat Cards */
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(37, 99, 235, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary);
+    }
+
+    .stat-card.green .stat-icon {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .stat-card.blue .stat-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3B82F6;
+    }
+
+    .stat-card.purple .stat-icon {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8B5CF6;
+    }
+
+    /* Schedule Grid */
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+    }
+
+    .day-column {
+        text-align: center;
+    }
+
+    .day-header {
+        font-weight: 600;
+        padding: 8px;
+        background: var(--gray-100);
+        border-radius: var(--radius);
+        margin-bottom: 8px;
+        color: var(--gray-700);
+    }
+
+    .class-slot {
+        background: linear-gradient(135deg, #DBEAFE 0%, #EFF6FF 100%);
+        border: 1px solid var(--primary-light);
+        border-radius: var(--radius);
+        padding: 10px;
+        margin-bottom: 8px;
+        position: relative;
+    }
+
+    .class-slot.cancelled {
+        background: linear-gradient(135deg, #FEE2E2 0%, #FEF2F2 100%);
+        border-color: #FECACA;
+    }
+
+    .slot-time {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--primary);
+    }
+
+    .slot-end {
+        font-size: 12px;
+        color: var(--gray-500);
+    }
+
+    .cancelled-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        font-size: 9px;
+        background: #EF4444;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+    }
+
+    .no-class {
+        padding: 20px;
+        color: var(--gray-400);
+    }
+
+    /* Activities List */
+    .activities-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px;
+        background: var(--gray-50);
+        border-radius: var(--radius);
+        transition: all 0.2s;
+    }
+
+    .activity-item:hover {
+        background: var(--gray-100);
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        background: var(--primary-light);
+        color: var(--primary);
+    }
+
+    .activity-icon.learning {
+        background: #DBEAFE;
+        color: #2563EB;
+    }
+
+    .activity-icon.skill {
+        background: #FEF3C7;
+        color: #D97706;
+    }
+
+    .activity-icon.wellness {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .activity-icon.collaboration {
+        background: #EDE9FE;
+        color: #7C3AED;
+    }
+
+    .activity-details {
+        flex: 1;
+    }
+
+    .activity-details h5 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .activity-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--gray-500);
+    }
+
+    .category-tag {
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .category-tag.learning {
+        background: #DBEAFE;
+        color: #2563EB;
+    }
+
+    .category-tag.skill {
+        background: #FEF3C7;
+        color: #D97706;
+    }
+
+    .category-tag.wellness {
+        background: #D1FAE5;
+        color: #059669;
+    }
+
+    .category-tag.collaboration {
+        background: #EDE9FE;
+        color: #7C3AED;
+    }
+
+    /* Student List */
+    .student-list {
+        padding: 0;
+    }
+
+    .student-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .student-item:last-child {
+        border-bottom: none;
+    }
+
+    .student-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .student-info {
+        flex: 1;
+    }
+
+    .student-name {
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .student-email {
+        font-size: 12px;
+        color: var(--gray-500);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 16px;
+        background: var(--gray-50);
+        border-radius: var(--radius);
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: var(--primary-light);
+        color: var(--primary);
+    }
+
+    .action-btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .action-btn.primary:hover {
+        background: var(--primary-dark);
+        color: white;
+    }
+
+    .action-btn i {
+        font-size: 24px;
+    }
+
+    .action-btn span {
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* Card Footer */
+    .card-footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--gray-100);
+    }
+
+    /* Empty State Small */
+    .empty-state.small {
+        padding: 24px;
+    }
+
+    .btn-outline {
+        border: 1px solid var(--gray-300);
+        background: transparent;
+        color: var(--gray-600);
+    }
+
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+</style>
+{% endblock %}

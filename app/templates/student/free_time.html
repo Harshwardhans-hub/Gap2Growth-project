@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Free Time - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Detected Free Time</h1>
+    <p>Make the most of your available time.</p>
+</div>
+
+{% if slots %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;">
+    {% for slot in slots %}
+    <div class="free-slot-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <div class="time">{{ slot.start_time }} - {{ slot.end_time }}</div>
+                <div class="info">{{ slot.day }}</div>
+            </div>
+            <div
+                style="background: var(--success); color: white; padding: 8px 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 600;">{{ slot.duration_minutes }}</div>
+                <div style="font-size: 11px;">minutes</div>
+            </div>
+        </div>
+        <p class="mb-3">
+            <span class="badge badge-student">{{ slot.reason|replace('_', ' ')|title }}</span>
+        </p>
+        <a href="{{ url_for('student.recommendations') }}?duration={{ slot.duration_minutes }}"
+            class="btn btn-primary w-100">
+            <i class="bi bi-lightbulb"></i> Find Activities for This Slot
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <div class="icon">⏰</div>
+            <h4>No free time slots detected</h4>
+            <p>Free time is automatically detected from gaps in your timetable or cancelled classes.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

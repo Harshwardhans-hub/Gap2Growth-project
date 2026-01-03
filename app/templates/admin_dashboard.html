@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin Dashboard - Manage users, view system statistics, and generate reports.">
+    <title>Admin Dashboard | Gap2Growth</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS Files -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);">
+            <div class="sidebar-header">
+                <a href="admin_dashboard.html" class="sidebar-logo">
+                    Gap<span>2</span>Growth
+                </a>
+            </div>
+
+            <!-- User Profile Section -->
+            <div class="sidebar-profile">
+                <div class="profile-avatar" style="background: linear-gradient(135deg, #ef476f 0%, #d63d5a 100%);">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <div class="profile-name" id="profileName">Admin</div>
+                <div class="profile-role">Administrator</div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Main Menu</div>
+
+                <a href="admin_dashboard.html" class="nav-link active">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <div class="nav-section-title">User Management</div>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-mortarboard"></i>
+                    <span>Manage Students</span>
+                    <span class="nav-badge" id="studentCount">0</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Manage Teachers</span>
+                    <span class="nav-badge" id="teacherCount">0</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Pending Approvals</span>
+                    <span class="nav-badge bg-warning" id="pendingCount">0</span>
+                </a>
+
+                <div class="nav-section-title">Academic</div>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-building"></i>
+                    <span>Departments</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-book"></i>
+                    <span>Courses</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-calendar3"></i>
+                    <span>Master Timetable</span>
+                </a>
+
+                <div class="nav-section-title">System</div>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-collection-play"></i>
+                    <span>Activity Repository</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>System Reports</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-gear"></i>
+                    <span>System Settings</span>
+                </a>
+
+                <div class="nav-section-title">Account</div>
+
+                <a href="#" class="nav-link" id="logoutBtn">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle" aria-label="Toggle sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="page-title">
+                        <i class="bi bi-speedometer2 text-danger me-2"></i>
+                        Admin Control Panel
+                    </h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="header-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search users, courses...">
+                    </div>
+
+                    <div class="header-notifications">
+                        <button class="notification-btn" aria-label="Notifications">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-badge" id="notifBadge" style="display: none;"></span>
+                        </button>
+                    </div>
+
+                    <div class="header-user">
+                        <div class="header-user-avatar"
+                            style="background: linear-gradient(135deg, #ef476f 0%, #d63d5a 100%);">
+                            <i class="bi bi-shield-lock" style="font-size: 1rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+
+                <!-- Alert Banner - Hidden by default -->
+                <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center mb-4" role="alert"
+                    id="alertBanner" style="display: none !important;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div id="alertMessage"></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Stats Cards Row -->
+                <div class="stats-row">
+
+                    <!-- Stat Card 1: Total Students -->
+                    <div class="stat-card">
+                        <div class="stat-icon primary">
+                            <i class="bi bi-mortarboard"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statStudents">-</h3>
+                            <p>Total Students</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 2: Total Teachers -->
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statTeachers">-</h3>
+                            <p>Total Teachers</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 3: Active Activities -->
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="bi bi-collection-play"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statActivities">-</h3>
+                            <p>Total Activities</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Main Dashboard Grid -->
+                <div class="dashboard-grid">
+
+                    <!-- Recent Registrations Card -->
+                    <div class="card grid-col-8">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-person-plus text-primary me-2"></i>
+                                Recent User Registrations
+                            </span>
+                            <div>
+                                <button class="btn btn-sm btn-success me-2" id="approveAllBtn">
+                                    <i class="bi bi-check-all me-1"></i>
+                                    Approve All
+                                </button>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table" id="registrationTable">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Department</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="registrationBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5">
+                                                <i class="bi bi-person-check text-muted" style="font-size: 2rem;"></i>
+                                                <p class="text-muted mt-2 mb-0">No pending registrations</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="card grid-col-4">
+                        <div class="card-header">
+                            <i class="bi bi-lightning-charge text-warning me-2"></i>
+                            Admin Actions
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-3">
+
+                                <button class="btn btn-primary d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-person-plus"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Add New User</strong>
+                                        <small class="d-block opacity-75">Student or Teacher</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-primary d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-building-add"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Add Department</strong>
+                                        <small class="d-block opacity-75">Create new department</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-success d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-calendar3"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Manage Timetables</strong>
+                                        <small class="d-block opacity-75">Master schedule</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-warning d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Generate Reports</strong>
+                                        <small class="d-block opacity-75">System analytics</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-secondary d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-gear"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>System Settings</strong>
+                                        <small class="d-block opacity-75">Configuration</small>
+                                    </div>
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Overview Card -->
+                    <div class="card grid-col-6">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-building text-primary me-2"></i>
+                                Department Overview
+                            </span>
+                            <a href="#" class="text-primary small">Manage</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="department-list" id="departmentList">
+                                <div class="empty-state text-center py-4">
+                                    <i class="bi bi-building text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2 mb-0">No departments configured</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Activity Card -->
+                    <div class="card grid-col-6">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-activity text-success me-2"></i>
+                                Recent System Activity
+                            </span>
+                            <a href="#" class="text-primary small">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="notification-list" id="activityLog">
+                                <div class="empty-state text-center py-4">
+                                    <i class="bi bi-clock-history text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2 mb-0">No recent activity</p>
+                                </div>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+
+    <!-- Additional styles -->
+    <style>
+        .avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .quick-action-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .dept-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .department-item:hover {
+            background: rgba(67, 97, 238, 0.1) !important;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            color: var(--gray-color);
+        }
+    </style>
+</body>
+
+</html>

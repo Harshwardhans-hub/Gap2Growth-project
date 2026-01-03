@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Notifications</h1>
+        <p>Stay updated on your learning opportunities.</p>
+    </div>
+    <button class="btn btn-secondary" onclick="markAllNotificationsRead()">
+        <i class="bi bi-check-all"></i> Mark All Read
+    </button>
+</div>
+
+<div class="notification-list">
+    {% for n in notifications %}
+    <div class="notification-item {{ 'unread' if not n.is_read else '' }}" onclick="markNotificationRead('{{ n.id }}')">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <p style="margin-bottom: 4px;">{{ n.message }}</p>
+                <small>{{ n.created_at[:16] if n.created_at else 'Just now' }}</small>
+            </div>
+            {% if not n.is_read %}
+            <span class="badge badge-admin">New</span>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 60px;">
+        <div class="icon">🔔</div>
+        <h4>No notifications</h4>
+        <p>We'll notify you about free time and recommendations!</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    async function markAllNotificationsRead() {
+        try {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            location.reload();
+        } catch (e) {
+            console.error('Error:', e);
+        }
+    }
+
+    async function markNotificationRead(id) {
+        try {
+            await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+            document.querySelector(`[onclick*="${id}"]`).classList.remove('unread');
+        } catch (e) {
+            console.error('Error:', e);
+        }
+    }
+</script>
+{% endblock %}

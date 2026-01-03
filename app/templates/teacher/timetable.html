@@ -1,0 +1,513 @@
+{% extends 'base.html' %}
+
+{% block title %}Timetable Management - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📅 Timetable Management</h1>
+        <p>Manage your class schedule for <strong>{{ user.course or 'your courses' }}</strong>. Students are
+            automatically notified of changes.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('teacher.add_timetable') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Class
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="quick-stats">
+    {% set total = entries|length %}
+    {% set scheduled_count = entries|selectattr('status', 'equalto', 'scheduled')|list|length %}
+    {% set cancelled_count = entries|selectattr('status', 'equalto', 'cancelled')|list|length %}
+    <div class="quick-stat">
+        <span class="stat-num">{{ total }}</span>
+        <span class="stat-text">Total Classes</span>
+    </div>
+    <div class="quick-stat active">
+        <span class="stat-num">{{ scheduled_count }}</span>
+        <span class="stat-text">Scheduled</span>
+    </div>
+    <div class="quick-stat cancelled">
+        <span class="stat-num">{{ cancelled_count }}</span>
+        <span class="stat-text">Cancelled</span>
+    </div>
+</div>
+
+<!-- Weekly Grid View -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3><i class="bi bi-calendar-week"></i> Weekly Schedule Overview</h3>
+    </div>
+    <div class="card-body">
+        <div class="teacher-schedule-grid">
+            {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+            {% for day in days %}
+            <div class="schedule-day">
+                <div class="schedule-day-header">{{ day }}</div>
+                <div class="schedule-day-content">
+                    {% set day_entries = entries|selectattr('day', 'equalto', day)|list|sort(attribute='start_time') %}
+                    {% if day_entries %}
+                    {% for entry in day_entries %}
+                    <div class="schedule-class {{ entry.status }}">
+                        <div class="class-time">
+                            {{ entry.start_time }} - {{ entry.end_time }}
+                        </div>
+                        <div class="class-actions">
+                            {% if entry.status == 'scheduled' %}
+                            <form action="{{ url_for('teacher.cancel_timetable', entry_id=entry.id) }}" method="POST"
+                                style="display: inline;">
+                                <button type="submit" class="action-icon cancel" title="Cancel Class"
+                                    onclick="return confirm('Cancel this class? Students will be notified automatically.');">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                            {% elif entry.status == 'cancelled' %}
+                            <span class="cancelled-tag">Cancelled</span>
+                            {% endif %}
+                            <a href="{{ url_for('teacher.edit_timetable', entry_id=entry.id) }}"
+                                class="action-icon edit" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="no-class-slot">
+                        <a href="{{ url_for('teacher.add_timetable') }}?day={{ day }}" class="add-class-link">
+                            <i class="bi bi-plus"></i> Add Class
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Detailed List View -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h3><i class="bi bi-list-ul"></i> All Classes</h3>
+            <p class="text-muted" style="margin: 0; font-size: 13px;">Click on any row to edit the class details</p>
+        </div>
+        <input type="text" class="search-input" placeholder="Search..." id="searchClasses" onkeyup="filterTable()">
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table" id="classesTable">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Course</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr class="{{ 'cancelled-row' if entry.status == 'cancelled' else '' }}">
+                    <td>
+                        <div class="day-badge {{ entry.day[:3]|lower }}">
+                            <span class="day-short">{{ entry.day[:3] }}</span>
+                            <span class="day-full">{{ entry.day }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="time-display">
+                            <span class="time-start">{{ entry.start_time }}</span>
+                            <span class="time-sep">→</span>
+                            <span class="time-end">{{ entry.end_time }}</span>
+                        </div>
+                    </td>
+                    <td><span class="course-tag">{{ entry.course }}</span></td>
+                    <td>
+                        {% if entry.status == 'scheduled' %}
+                        <span class="status-pill scheduled"><i class="bi bi-check-circle"></i> Scheduled</span>
+                        {% elif entry.status == 'cancelled' %}
+                        <span class="status-pill cancelled"><i class="bi bi-x-circle"></i> Cancelled</span>
+                        {% else %}
+                        <span class="status-pill rescheduled"><i class="bi bi-arrow-repeat"></i> {{ entry.status|title
+                            }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('teacher.edit_timetable', entry_id=entry.id) }}"
+                                class="btn btn-sm btn-outline" title="Edit">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            {% if entry.status == 'scheduled' %}
+                            <form action="{{ url_for('teacher.cancel_timetable', entry_id=entry.id) }}" method="POST"
+                                style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Cancel this class? Students will be notified via email.');">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form action="{{ url_for('teacher.delete_timetable', entry_id=entry.id) }}" method="POST"
+                                style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-ghost"
+                                    onclick="return confirm('Delete this entry permanently?');" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <div class="icon">📅</div>
+                            <h4>No classes scheduled yet</h4>
+                            <p>Create your first class to start managing your timetable.</p>
+                            <a href="{{ url_for('teacher.add_timetable') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add Your First Class
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    /* Quick Stats */
+    .quick-stats {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .quick-stat {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+    }
+
+    .quick-stat.active .stat-num {
+        color: #10B981;
+    }
+
+    .quick-stat.cancelled .stat-num {
+        color: #EF4444;
+    }
+
+    .stat-num {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    .stat-text {
+        font-size: 13px;
+        color: var(--gray-500);
+    }
+
+    /* Teacher Schedule Grid */
+    .teacher-schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+    }
+
+    @media (max-width: 992px) {
+        .teacher-schedule-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+        .teacher-schedule-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .schedule-day {
+        background: var(--gray-50);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .schedule-day-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .schedule-day-content {
+        padding: 12px;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .schedule-class {
+        background: white;
+        border-radius: var(--radius);
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 3px solid var(--primary);
+    }
+
+    .schedule-class.cancelled {
+        border-left-color: #EF4444;
+        opacity: 0.6;
+    }
+
+    .schedule-class.cancelled .class-time {
+        text-decoration: line-through;
+        color: var(--gray-400);
+    }
+
+    .class-time {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--gray-800);
+    }
+
+    .class-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .action-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .action-icon.cancel {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .action-icon.cancel:hover {
+        background: #DC2626;
+        color: white;
+    }
+
+    .action-icon.edit {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        text-decoration: none;
+    }
+
+    .action-icon.edit:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .cancelled-tag {
+        font-size: 10px;
+        background: #FEE2E2;
+        color: #DC2626;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .no-class-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 80px;
+    }
+
+    .add-class-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: 2px dashed var(--gray-300);
+        border-radius: var(--radius);
+        color: var(--gray-400);
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+
+    .add-class-link:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-lighter);
+    }
+
+    /* Table Styles */
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .modern-table th {
+        background: var(--gray-50);
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .modern-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--gray-100);
+        vertical-align: middle;
+    }
+
+    .cancelled-row {
+        background: #FEF2F2;
+    }
+
+    .day-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 13px;
+        background: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    .day-short {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .day-short {
+            display: inline;
+        }
+
+        .day-full {
+            display: none;
+        }
+    }
+
+    .time-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+
+    .time-sep {
+        color: var(--gray-400);
+    }
+
+    .course-tag {
+        background: var(--primary-lighter);
+        color: var(--primary);
+        padding: 4px 10px;
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-pill.scheduled {
+        background: #D1FAE5;
+        color: #047857;
+    }
+
+    .status-pill.cancelled {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .status-pill.rescheduled {
+        background: #FEF3C7;
+        color: #B45309;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: var(--gray-400);
+        padding: 6px;
+    }
+
+    .btn-ghost:hover {
+        color: #DC2626;
+    }
+
+    .btn-outline {
+        background: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+    }
+
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .search-input {
+        padding: 8px 16px;
+        border: 1px solid var(--gray-300);
+        border-radius: var(--radius);
+        font-size: 14px;
+        width: 200px;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+</style>
+
+<script>
+    function filterTable() {
+        const query = document.getElementById('searchClasses').value.toLowerCase();
+        const rows = document.querySelectorAll('#classesTable tbody tr');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

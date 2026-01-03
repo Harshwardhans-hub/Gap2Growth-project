@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Teacher Dashboard - Manage your classes, create activities, and track student progress.">
+    <title>Teacher Dashboard | Gap2Growth</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS Files -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="teacher_dashboard.html" class="sidebar-logo">
+                    Gap<span>2</span>Growth
+                </a>
+            </div>
+
+            <!-- User Profile Section -->
+            <div class="sidebar-profile">
+                <div class="profile-avatar" id="profileAvatar"
+                    style="background: linear-gradient(135deg, #7209b7 0%, #3a0ca3 100%);"></div>
+                <div class="profile-name" id="profileName">Loading...</div>
+                <div class="profile-role">Teacher</div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Main Menu</div>
+
+                <a href="teacher_dashboard.html" class="nav-link active">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-calendar3"></i>
+                    <span>My Classes</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-calendar-plus"></i>
+                    <span>Manage Timetable</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-calendar-x"></i>
+                    <span>Cancel Class</span>
+                </a>
+
+                <div class="nav-section-title">Activities</div>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Create Activity</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-collection"></i>
+                    <span>My Activities</span>
+                </a>
+
+                <div class="nav-section-title">Reports</div>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-people"></i>
+                    <span>Student Engagement</span>
+                    <span class="nav-badge" id="engagementCount">0</span>
+                </a>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>Reports</span>
+                </a>
+
+                <div class="nav-section-title">Account</div>
+
+                <a href="#" class="nav-link">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+
+                <a href="#" class="nav-link" id="logoutBtn">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle" aria-label="Toggle sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="page-title">
+                        <i class="bi bi-sun text-warning me-2"></i>
+                        <span id="greetingText">Welcome!</span>
+                    </h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="header-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search students or activities...">
+                    </div>
+
+                    <div class="header-notifications">
+                        <button class="notification-btn" aria-label="Notifications">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-badge" id="notifBadge" style="display: none;"></span>
+                        </button>
+                    </div>
+
+                    <div class="header-user">
+                        <div class="header-user-avatar" id="headerAvatar"
+                            style="background: linear-gradient(135deg, #7209b7 0%, #3a0ca3 100%);"></div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+
+                <!-- Stats Cards Row -->
+                <div class="stats-row">
+
+                    <!-- Stat Card 1: Today's Classes -->
+                    <div class="stat-card">
+                        <div class="stat-icon primary">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statClasses">-</h3>
+                            <p>Classes Today</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 2: Total Students -->
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statStudents">-</h3>
+                            <p>Total Students</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 3: Activities Created -->
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="bi bi-collection-play"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statActivities">-</h3>
+                            <p>Activities Created</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 4: Student Engagement -->
+                    <div class="stat-card">
+                        <div class="stat-icon danger">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3 id="statEngagement">-</h3>
+                            <p>Avg. Engagement</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Main Dashboard Grid -->
+                <div class="dashboard-grid">
+
+                    <!-- Today's Schedule Card -->
+                    <div class="card grid-col-8">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-calendar-week text-primary me-2"></i>
+                                Today's Teaching Schedule
+                            </span>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-calendar-x me-1"></i>
+                                Cancel a Class
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Class Schedule Table -->
+                            <div class="table-responsive">
+                                <table class="table" id="scheduleTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Subject</th>
+                                            <th>Section</th>
+                                            <th>Room</th>
+                                            <th>Students</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="scheduleBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5">
+                                                <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
+                                                <p class="text-muted mt-2 mb-0">No classes scheduled for today</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="card grid-col-4">
+                        <div class="card-header">
+                            <i class="bi bi-lightning-charge text-warning me-2"></i>
+                            Quick Actions
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-3">
+
+                                <button class="btn btn-primary d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Create New Activity</strong>
+                                        <small class="d-block opacity-75">Add learning content</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-danger d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-calendar-x"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Cancel a Class</strong>
+                                        <small class="d-block opacity-75">Notify students</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-primary d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-calendar-plus"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>Update Timetable</strong>
+                                        <small class="d-block opacity-75">Modify schedule</small>
+                                    </div>
+                                </button>
+
+                                <button
+                                    class="btn btn-outline-success d-flex align-items-center justify-content-start gap-2">
+                                    <div class="quick-action-icon">
+                                        <i class="bi bi-file-earmark-bar-graph"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <strong>View Reports</strong>
+                                        <small class="d-block opacity-75">Student engagement</small>
+                                    </div>
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Engagement Card -->
+                    <div class="card grid-col-6">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-people text-primary me-2"></i>
+                                Top Engaged Students
+                            </span>
+                            <a href="#" class="text-primary small">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="student-engagement-list" id="studentList">
+                                <div class="empty-state text-center py-4">
+                                    <i class="bi bi-people text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2 mb-0">No student data available</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- My Activities Card -->
+                    <div class="card grid-col-6">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-collection-play text-success me-2"></i>
+                                My Created Activities
+                            </span>
+                            <a href="#" class="text-primary small">Manage All</a>
+                        </div>
+                        <div class="card-body">
+                            <ul class="activity-list" id="activityList">
+                                <div class="empty-state text-center py-4">
+                                    <i class="bi bi-collection text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2 mb-0">No activities created yet</p>
+                                </div>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+
+    <!-- Additional styles -->
+    <style>
+        .quick-action-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .empty-state {
+            color: var(--gray-color);
+        }
+    </style>
+</body>
+
+</html>

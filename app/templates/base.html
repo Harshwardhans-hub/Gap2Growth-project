@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gap2Growth{% endblock %}</title>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Dashboard Layout with Sidebar -->
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">G</div>
+                <h1>Gap2Growth</h1>
+            </div>
+
+            <nav class="sidebar-nav">
+                {% if session.get('user') and session.user.role == 'admin' %}
+                <!-- Admin Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Dashboard</div>
+                    <a href="{{ url_for('admin.dashboard') }}"
+                        class="nav-item {{ 'active' if request.endpoint == 'admin.dashboard' else '' }}">
+                        <i class="bi bi-grid-1x2"></i> System Overview
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <a href="{{ url_for('admin.users_list') }}"
+                        class="nav-item {{ 'active' if 'users' in request.endpoint else '' }}">
+                        <i class="bi bi-people"></i> User Management
+                    </a>
+                    <a href="{{ url_for('admin.activities_list') }}"
+                        class="nav-item {{ 'active' if 'activities' in request.endpoint else '' }}">
+                        <i class="bi bi-collection"></i> Curriculum
+                    </a>
+                    <a href="{{ url_for('admin.reports') }}"
+                        class="nav-item {{ 'active' if 'reports' in request.endpoint else '' }}">
+                        <i class="bi bi-graph-up"></i> Reports
+                    </a>
+                </div>
+
+                {% elif session.get('user') and session.user.role == 'teacher' %}
+                <!-- Teacher Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Dashboard</div>
+                    <a href="{{ url_for('teacher.dashboard') }}"
+                        class="nav-item {{ 'active' if request.endpoint == 'teacher.dashboard' else '' }}">
+                        <i class="bi bi-grid-1x2"></i> Overview
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Teaching</div>
+                    <a href="{{ url_for('teacher.timetable') }}"
+                        class="nav-item {{ 'active' if 'timetable' in request.endpoint else '' }}">
+                        <i class="bi bi-calendar3"></i> Timetable
+                    </a>
+                    <a href="{{ url_for('teacher.activities_list') }}"
+                        class="nav-item {{ 'active' if 'activities' in request.endpoint else '' }}">
+                        <i class="bi bi-collection"></i> Activities
+                    </a>
+                    <a href="{{ url_for('teacher.students_list') }}"
+                        class="nav-item {{ 'active' if 'students' in request.endpoint else '' }}">
+                        <i class="bi bi-mortarboard"></i> Students
+                    </a>
+                </div>
+
+                {% elif session.get('user') and session.user.role == 'student' %}
+                <!-- Student Navigation -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Dashboard</div>
+                    <a href="{{ url_for('student.dashboard') }}"
+                        class="nav-item {{ 'active' if request.endpoint == 'student.dashboard' else '' }}">
+                        <i class="bi bi-grid-1x2"></i> Overview
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Learning</div>
+                    <a href="{{ url_for('student.timetable') }}"
+                        class="nav-item {{ 'active' if 'timetable' in request.endpoint else '' }}">
+                        <i class="bi bi-calendar3"></i> Timetable
+                    </a>
+                    <a href="{{ url_for('student.free_time') }}"
+                        class="nav-item {{ 'active' if 'free_time' in request.endpoint else '' }}">
+                        <i class="bi bi-clock-history"></i> Free Time
+                    </a>
+                    <a href="{{ url_for('student.history') }}"
+                        class="nav-item {{ 'active' if 'history' in request.endpoint else '' }}">
+                        <i class="bi bi-journal-check"></i> Activity History
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Notifications</div>
+                    <a href="{{ url_for('student.notifications') }}"
+                        class="nav-item {{ 'active' if 'notifications' in request.endpoint else '' }}">
+                        <i class="bi bi-bell"></i> Notifications
+                    </a>
+                </div>
+                {% endif %}
+            </nav>
+
+            {% if session.get('user') %}
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar">{{ session.user.name[:1]|upper }}</div>
+                    <div class="user-info">
+                        <div class="name">{{ session.user.name }}</div>
+                        <div class="role">{{ session.user.role|title }}</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary w-100" style="margin-top: 12px;">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </a>
+            </div>
+            {% endif %}
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% if session.get('user') %}
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('student.notifications') if session.user.role == 'student' else '#' }}"
+                        class="header-btn">
+                        <i class="bi bi-bell"></i>
+                    </a>
+                </div>
+            </header>
+            {% endif %}
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Page Content -->
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

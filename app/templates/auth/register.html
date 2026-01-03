@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Registration - Gap2Growth</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="login-wrapper">
+        <!-- Left Side - Branding -->
+        <div class="login-left">
+            <div class="login-brand">
+                <div class="login-logo">G</div>
+                <div class="login-tagline">
+                    <h2>Almost There!</h2>
+                    <p>Complete your profile to start your learning journey with Gap2Growth.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Registration Form -->
+        <div class="login-right">
+            <div class="login-form-container">
+                <div class="login-form">
+                    <h3>Complete Your Profile</h3>
+                    <p>Welcome, <strong>{{ pending_user.name }}</strong>! Please confirm your details and select your
+                        course.</p>
+
+                    <form method="POST" action="{{ url_for('auth.complete_registration') }}">
+                        <div class="form-group">
+                            <label>Your Name <span style="color: var(--danger);">*</span></label>
+                            <input type="text" class="form-control" name="name" value="{{ pending_user.name }}"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" value="{{ pending_user.email }}" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Your Role</label>
+                            <input type="text" class="form-control" value="{{ role|title }}" disabled>
+                            <input type="hidden" name="role" value="{{ role }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Select Your Course <span style="color: var(--danger);">*</span></label>
+                            <select class="form-select" name="course" id="courseSelect" required>
+                                <option value="">Choose your course...</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                <option value="Data Science">Data Science</option>
+                                <option value="Business Administration">Business Administration</option>
+                                <option value="General">General</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary-full">
+                            <i class="bi bi-check-circle"></i> Complete Registration
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No JavaScript needed - form is straightforward -->
+</body>
+
+</html>

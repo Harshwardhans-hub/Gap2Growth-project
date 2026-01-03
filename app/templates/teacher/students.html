@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Students - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Students</h1>
+    <p>Students enrolled in {{ user.course or 'your course' }}.</p>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Course</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in students %}
+            <tr>
+                <td>
+                    <div class="user-cell">
+                        <div class="avatar">{{ s.name[:1]|upper }}</div>
+                        <span>{{ s.name }}</span>
+                    </div>
+                </td>
+                <td>{{ s.email }}</td>
+                <td>{{ s.course }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">
+                    <div class="empty-state">
+                        <div class="icon">👥</div>
+                        <h4>No students enrolled</h4>
+                        <p>No students are enrolled in this course yet.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

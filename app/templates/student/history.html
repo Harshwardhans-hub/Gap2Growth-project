@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Activity History - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Activity History</h1>
+    <p>Track your learning journey and progress.</p>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Activity</th>
+                <th>Category</th>
+                <th>Duration</th>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td><strong>{{ log.activities.title if log.activities else 'Unknown' }}</strong></td>
+                <td>
+                    {% if log.activities %}
+                    <span class="category-badge {{ log.activities.category|lower }}">{{ log.activities.category
+                        }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ log.activities.duration_minutes if log.activities else '-' }} mins</td>
+                <td>{{ log.start_time[:16] if log.start_time else '-' }}</td>
+                <td>
+                    <span class="badge badge-{{ 'success' if log.status == 'completed' else 'warning' }}">
+                        {{ log.status|replace('_', ' ')|title }}
+                    </span>
+                </td>
+                <td>
+                    {% if log.status == 'in_progress' %}
+                    <form action="{{ url_for('student.end_activity', log_id=log.id) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-success btn-sm"
+                            onclick="return confirm('Complete this activity?')">
+                            <i class="bi bi-check-circle"></i> End Activity
+                        </button>
+                    </form>
+                    {% elif log.status == 'completed' %}
+                    <span class="text-muted"><i class="bi bi-check-circle-fill"></i> Done</span>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <div class="icon">📊</div>
+                        <h4>No activity history</h4>
+                        <p>Start your first activity to begin tracking your progress.</p>
+                        <a href="{{ url_for('student.recommendations') }}" class="btn btn-primary">Browse Activities</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

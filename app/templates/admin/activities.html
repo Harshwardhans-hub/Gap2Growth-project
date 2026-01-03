@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Curriculum - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Curriculum</h1>
+    <p>All available learning activities in the system.</p>
+</div>
+
+<div class="table-container">
+    <div class="table-header">
+        <h3>Activity Repository</h3>
+        <input type="text" class="search-input" placeholder="Search activities...">
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Duration</th>
+                <th>Course</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in activities %}
+            <tr>
+                <td><strong>{{ a.title }}</strong></td>
+                <td><span
+                        class="badge badge-{{ 'admin' if a.category == 'Learning' else 'teacher' if a.category == 'Skill' else 'student' }}">{{
+                        a.category }}</span></td>
+                <td>{{ a.duration_minutes }} mins</td>
+                <td>{{ a.course or 'General' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <div class="icon">📚</div>
+                        <h4>No activities in repository</h4>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

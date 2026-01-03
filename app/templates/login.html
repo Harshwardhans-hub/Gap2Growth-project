@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Gap2Growth - Adaptive Student Time Utilization System. Login to access your personalized learning dashboard.">
+
+    <title>Login | Gap2Growth</title>
+
+    <!-- Google Fonts - Inter for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS - For responsive grid and components -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons - For UI icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS Files -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/login.css">
+</head>
+
+<body>
+    <!-- ========== MAIN LOGIN PAGE CONTAINER ========== -->
+    <!-- Uses a split-screen layout: branding on left, form on right -->
+    <div class="login-page">
+
+        <!-- ========== LEFT PANEL - BRANDING ========== -->
+        <!-- This panel shows app branding and features (hidden on mobile) -->
+        <div class="login-branding">
+            <div class="branding-content">
+                <!-- App Logo -->
+                <div class="branding-logo">
+                    Gap<span>2</span>Growth
+                </div>
+
+                <!-- App Tagline -->
+                <p class="branding-tagline">
+                    Transform your free time into learning opportunities
+                </p>
+
+                <!-- Decorative Illustration -->
+                <!-- Using a gradient placeholder - can be replaced with actual SVG -->
+                <div class="branding-illustration">
+                    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Simple illustration of a student with a laptop -->
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:rgba(255,255,255,0.2)" />
+                                <stop offset="100%" style="stop-color:rgba(255,255,255,0.05)" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Desk -->
+                        <rect x="50" y="200" width="300" height="20" rx="5" fill="url(#grad1)" />
+                        <!-- Laptop -->
+                        <rect x="120" y="140" width="160" height="60" rx="5" fill="url(#grad1)" />
+                        <rect x="100" y="195" width="200" height="10" rx="2" fill="rgba(255,255,255,0.3)" />
+                        <!-- Screen content lines -->
+                        <rect x="135" y="155" width="80" height="4" rx="2" fill="rgba(255,255,255,0.5)" />
+                        <rect x="135" y="165" width="60" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+                        <rect x="135" y="175" width="100" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+                        <!-- Person -->
+                        <circle cx="200" cy="90" r="30" fill="url(#grad1)" />
+                        <ellipse cx="200" cy="145" rx="40" ry="25" fill="url(#grad1)" />
+                        <!-- Books stack -->
+                        <rect x="290" y="170" width="50" height="10" rx="2" fill="rgba(255,209,102,0.5)" />
+                        <rect x="295" y="160" width="45" height="10" rx="2" fill="rgba(6,214,160,0.5)" />
+                        <rect x="292" y="150" width="48" height="10" rx="2" fill="rgba(67,97,238,0.5)" />
+                        <!-- Clock -->
+                        <circle cx="80" cy="100" r="25" fill="url(#grad1)" stroke="rgba(255,255,255,0.3)"
+                            stroke-width="2" />
+                        <line x1="80" y1="100" x2="80" y2="85" stroke="rgba(255,255,255,0.6)" stroke-width="2" />
+                        <line x1="80" y1="100" x2="90" y2="100" stroke="rgba(255,255,255,0.6)" stroke-width="2" />
+                    </svg>
+                </div>
+
+                <!-- Feature List -->
+                <ul class="branding-features">
+                    <li>
+                        <i class="bi bi-check-circle-fill"></i>
+                        Smart gap detection in your timetable
+                    </li>
+                    <li>
+                        <i class="bi bi-check-circle-fill"></i>
+                        Personalized activity recommendations
+                    </li>
+                    <li>
+                        <i class="bi bi-check-circle-fill"></i>
+                        Track your learning progress
+                    </li>
+                    <li>
+                        <i class="bi bi-check-circle-fill"></i>
+                        Detailed PDF reports
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ========== RIGHT PANEL - LOGIN FORM ========== -->
+        <!-- Contains the actual login form -->
+        <div class="login-form-container">
+            <div class="login-form-wrapper">
+
+                <!-- Login Header -->
+                <div class="login-header">
+                    <!-- Mobile logo (shown only on small screens) -->
+                    <div class="d-lg-none mb-4">
+                        <div class="branding-logo text-primary">
+                            Gap<span class="text-warning">2</span>Growth
+                        </div>
+                    </div>
+
+                    <h2>Welcome Back!</h2>
+                    <p>Sign in to continue to your dashboard</p>
+                </div>
+
+                <!-- ========== ROLE SELECTOR ========== -->
+                <!-- Tabs to select user role before logging in -->
+                <div class="role-selector">
+                    <button class="role-btn active" data-role="student">
+                        <i class="bi bi-mortarboard me-1"></i>
+                        Student
+                    </button>
+                    <button class="role-btn" data-role="teacher">
+                        <i class="bi bi-person-badge me-1"></i>
+                        Teacher
+                    </button>
+                    <button class="role-btn" data-role="admin">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        Admin
+                    </button>
+                </div>
+
+                <!-- ========== LOGIN FORM ========== -->
+                <!-- Main login form with email and password fields -->
+                <form id="loginForm" class="login-form" novalidate>
+
+                    <!-- Email Field -->
+                    <div class="form-group mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <div class="input-icon">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="Enter your email" autocomplete="email" required>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-icon">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" class="form-control" id="password" name="password"
+                                placeholder="Enter your password" autocomplete="current-password" required>
+                            <!-- Password visibility toggle button -->
+                            <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="remember-forgot">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-login">
+                        Login as Student
+                    </button>
+                </form>
+
+                <!-- ========== DIVIDER ========== -->
+                <!-- Separates email login from social login -->
+                <div class="divider">
+                    <span>or continue with</span>
+                </div>
+
+                <!-- ========== GOOGLE LOGIN BUTTON ========== -->
+                <!-- OAuth login option -->
+                <button type="button" class="btn btn-google">
+                    <!-- Using inline SVG for Google logo -->
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Sign in with Google
+                </button>
+
+                <!-- ========== FOOTER LINKS ========== -->
+                <!-- Additional links like signup -->
+                <div class="login-footer">
+                    <p class="mb-0">
+                        Don't have an account?
+                        <a href="#">Contact your administrator</a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <!-- Bootstrap JS Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript Files -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/login.js"></script>
+</body>
+
+</html>

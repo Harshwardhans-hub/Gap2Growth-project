@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit Activity' if activity else 'Create Activity' }} - Gap2Growth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ 'Edit Activity' if activity else 'Create New Activity' }}</h1>
+    <p>{{ 'Update the activity details.' if activity else 'Add a new learning activity for students.' }}</p>
+</div>
+
+<div class="form-card">
+    <form method="POST">
+        <div class="form-group">
+            <label>Activity Title <span>*</span></label>
+            <input type="text" class="form-control" name="title" value="{{ activity.title if activity else '' }}"
+                placeholder="e.g., Quick Python Practice" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Category <span>*</span></label>
+                <select class="form-select" name="category" required>
+                    <option value="Learning" {{ 'selected' if activity and activity.category=='Learning' else '' }}>📚
+                        Learning</option>
+                    <option value="Skill" {{ 'selected' if activity and activity.category=='Skill' else '' }}>🛠️ Skill
+                        Development</option>
+                    <option value="Wellness" {{ 'selected' if activity and activity.category=='Wellness' else '' }}>🧘
+                        Wellness</option>
+
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Duration (minutes) <span>*</span></label>
+                <input type="number" class="form-control" name="duration"
+                    value="{{ activity.duration_minutes if activity else 30 }}" min="5" max="120" required>
+            </div>
+        </div>
+
+        <!-- Difficulty and Mode options removed as per requirements -->
+        <input type="hidden" name="difficulty" value="{{ activity.difficulty if activity else 'Medium' }}">
+        <input type="hidden" name="mode" value="{{ activity.mode if activity else 'Solo' }}">
+
+        <div class="form-group">
+            <label>Description</label>
+            <textarea class="form-control" name="description" rows="3"
+                placeholder="Brief description of what students will learn or accomplish">{{ activity.description if activity else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Department</label>
+            <input type="text" class="form-control" value="{{ user.course or 'General' }}" disabled>
+            <input type="hidden" name="course" value="{{ user.course or '' }}">
+            <small class="form-text text-muted">Activities are automatically assigned to your department. Students in {{
+                user.course or 'General' }} will see this activity.</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check"></i> {{ 'Update' if activity else 'Create' }} Activity
+            </button>
+            <a href="{{ url_for('teacher.activities_list') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
