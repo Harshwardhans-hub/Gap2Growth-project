@@ -226,11 +226,7 @@ The system uses the following tables:
 
 ---
 
-## 📝 License
 
-This project is developed for educational purposes.
-
----
 
 ## 🙏 Acknowledgments
 
@@ -240,6 +236,4 @@ This project is developed for educational purposes.
 - **APScheduler** - Background task scheduling
 - **Bootstrap Icons** - UI icons
 
----
 
-**Built with ❤️ for students everywhere**
