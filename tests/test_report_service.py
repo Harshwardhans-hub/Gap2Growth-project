@@ -92,13 +92,16 @@ class EngagementStatsTests(unittest.TestCase):
             {"status": "completed", "activities": {"title": f"Topic {index}", "duration_minutes": 5}}
             for index in range(7)
         ]
-        logs.append({"status": "completed", "activities": {"duration_minutes": 10}})
+        logs.extend([
+            {"status": "completed", "activities": {"duration_minutes": 10}},
+            {"status": "completed", "activities": {"duration_minutes": 5}},
+        ])
         with patch.object(report_service, "get_all_activity_logs", return_value=logs):
             result = report_service.get_engagement_stats()
 
         self.assertEqual(len(result["top_activities"]), 5)
-        self.assertIn(("Unknown", 1), result["top_activities"])
-        self.assertEqual(result["total_completed"], 8)
+        self.assertIn(("Unknown", 2), result["top_activities"])
+        self.assertEqual(result["total_completed"], 9)
 
 
 
