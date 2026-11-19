@@ -168,5 +168,23 @@ class RecommendationSelectionTests(unittest.TestCase):
 
 
 
+    def test_personalized_recommendations_fall_back_when_every_item_was_completed(self):
+        activities = [
+            {"id": 1, "course": "CSE", "category": "Learning", "duration_minutes": 20},
+            {"id": 2, "course": "CSE", "category": "Learning", "duration_minutes": 25},
+        ]
+        logs = [
+            {"status": "completed", "activity_id": 1, "activities": {"category": "Learning"}},
+            {"status": "completed", "activity_id": 2, "activities": {"category": "Learning"}},
+        ]
+        with patch.object(recommendation_service, "get_activity_logs_by_student", return_value=logs), \
+             patch.object(recommendation_service, "get_activities_by_course", return_value=activities), \
+             patch.object(random, "shuffle", side_effect=lambda values: None):
+            result = recommendation_service.get_personalized_recommendations("student-2", "CSE", 30)
+
+        self.assertEqual([item["id"] for item in result], [1, 2])
+
+
+
 if __name__ == "__main__":
     unittest.main()
