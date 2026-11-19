@@ -22,3 +22,5 @@ python -m unittest discover -s tests -v
 ## Extending coverage
 
 When adding a schedule rule, test the smallest qualifying gap, a gap just below the threshold, overlapping or malformed times, a cancelled class, and a day with no classes. Keep database calls mocked so these tests remain deterministic and safe to run in continuous integration.
+
+See [RECOMMENDATION_SCORING.md](RECOMMENDATION_SCORING.md) for the scoring weights, selection pipeline, random tie handling, and personalization fallback policy.
