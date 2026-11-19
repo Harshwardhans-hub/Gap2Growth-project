@@ -87,6 +87,20 @@ class EngagementStatsTests(unittest.TestCase):
         self.assertEqual(result["total_hours"], 0.0)
         self.assertEqual(result["top_activities"], [])
 
+    def test_top_activity_list_is_limited_to_five_and_handles_missing_titles(self):
+        logs = [
+            {"status": "completed", "activities": {"title": f"Topic {index}", "duration_minutes": 5}}
+            for index in range(7)
+        ]
+        logs.append({"status": "completed", "activities": {"duration_minutes": 10}})
+        with patch.object(report_service, "get_all_activity_logs", return_value=logs):
+            result = report_service.get_engagement_stats()
+
+        self.assertEqual(len(result["top_activities"]), 5)
+        self.assertIn(("Unknown", 1), result["top_activities"])
+        self.assertEqual(result["total_completed"], 8)
+
+
 
 if __name__ == "__main__":
     unittest.main()
