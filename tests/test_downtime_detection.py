@@ -69,6 +69,28 @@ class DowntimeDetectionTests(unittest.TestCase):
 
         self.assertEqual([slot["start_time"] for slot in slots], ["09:00", "11:00"])
 
+    def test_daily_schedule_inserts_free_time_between_classes(self):
+        timetable = [
+            {"id": 1, "day": "Monday", "status": "scheduled", "start_time": "09:00", "end_time": "10:00"},
+            {"id": 2, "day": "Monday", "status": "scheduled", "start_time": "11:00", "end_time": "12:00"},
+            {"id": 3, "day": "Tuesday", "status": "scheduled", "start_time": "13:00", "end_time": "14:00"},
+        ]
+        with patch.object(downtime_service, "get_timetable_by_course", return_value=timetable), \
+             patch.object(downtime_service, "_is_slot_current", return_value=False):
+            schedule = downtime_service.get_daily_schedule_with_gaps("CSE", "Monday")
+
+        self.assertEqual([item["type"] for item in schedule], ["class", "free_time", "class"])
+        self.assertEqual(schedule[1]["start_time"], "10:00")
+        self.assertEqual(schedule[1]["end_time"], "11:00")
+        self.assertEqual(schedule[1]["duration_minutes"], 60)
+
+    def test_daily_schedule_without_matching_day_is_empty(self):
+        timetable = [
+            {"day": "Tuesday", "status": "scheduled", "start_time": "09:00", "end_time": "10:00"}
+        ]
+        with patch.object(downtime_service, "get_timetable_by_course", return_value=timetable):
+            self.assertEqual(downtime_service.get_daily_schedule_with_gaps("CSE", "Monday"), [])
+
 
 if __name__ == "__main__":
     unittest.main()
