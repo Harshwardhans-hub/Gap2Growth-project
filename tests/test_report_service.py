@@ -27,6 +27,24 @@ for _name in (
     if not hasattr(database_stub, _name):
         setattr(database_stub, _name, lambda *args, **kwargs: [])
 
+
+try:
+    import jinja2  # noqa: F401
+except ModuleNotFoundError:
+    # Engagement aggregation does not render templates; provide only the
+    # import-time symbol required by report_service in this offline test suite.
+    jinja_stub = ModuleType("jinja2")
+
+    class _UnusedTemplate:
+        def __init__(self, template):
+            self.template = template
+
+        def render(self, **kwargs):
+            raise RuntimeError("Template rendering is outside this unit test")
+
+    jinja_stub.Template = _UnusedTemplate
+    sys.modules["jinja2"] = jinja_stub
+
 from app.services import report_service  # noqa: E402
 
 
