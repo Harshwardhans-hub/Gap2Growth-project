@@ -105,5 +105,27 @@ class EngagementStatsTests(unittest.TestCase):
 
 
 
+    def test_pdf_generation_returns_html_when_pdf_backend_is_unavailable(self):
+        with patch.object(report_service, "generate_report_html", return_value="<html>report</html>"), \
+             patch.object(report_service, "WEASYPRINT_AVAILABLE", False):
+            content, output_format = report_service.generate_report_pdf("Weekly", "student-1")
+
+        self.assertEqual(output_format, "html")
+        self.assertEqual(content, b"<html>report</html>")
+
+    def test_weekly_report_loop_continues_after_one_student_fails(self):
+        students = [{"id": "student-a"}, {"id": "student-b"}]
+        with patch.object(report_service, "get_users_by_role", return_value=students), \
+             patch.object(
+                 report_service, "generate_report_pdf",
+                 side_effect=[RuntimeError("simulated failure"), (b"ok", "html")],
+             ) as generate:
+            report_service.generate_weekly_reports()
+
+        self.assertEqual(generate.call_count, 2)
+        self.assertEqual(generate.call_args_list[1].args, ("Weekly", "student-b"))
+
+
+
 if __name__ == "__main__":
     unittest.main()
