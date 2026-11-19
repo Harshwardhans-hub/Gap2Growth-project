@@ -134,6 +134,39 @@ class RecommendationSelectionTests(unittest.TestCase):
 
         self.assertEqual([item["id"] for item in result], [2])
 
+    def test_category_lookup_uses_global_activity_source_without_course(self):
+        activities = [{"id": 1, "category": "Learning", "duration_minutes": 15}]
+        with patch.object(recommendation_service, "get_all_activities", return_value=activities) as lookup:
+            result = recommendation_service.get_activities_by_category("Learning")
+
+        lookup.assert_called_once_with()
+        self.assertEqual(result, activities)
+
+    def test_group_suggestions_request_group_mode(self):
+        expected = [{"id": "group-task"}]
+        with patch.object(
+            recommendation_service, "get_recommended_activities", return_value=expected
+        ) as recommend:
+            result = recommendation_service.get_group_activity_suggestions("CSE", 45)
+
+        recommend.assert_called_once_with("CSE", 45, mode="Group")
+        self.assertEqual(result, expected)
+
+    def test_categorization_places_unknown_categories_in_learning(self):
+        activities = [
+            {"id": 1, "category": "Learning"},
+            {"id": 2, "category": "Collaboration"},
+            {"id": 3, "category": "Creative"},
+        ]
+        with patch.object(recommendation_service, "get_all_activities", return_value=activities):
+            result = recommendation_service.categorize_activities_by_type()
+
+        self.assertEqual(result["Learning"], [activities[0], activities[2]])
+        self.assertEqual(result["Collaboration"], [activities[1]])
+        self.assertEqual(result["Skill"], [])
+        self.assertEqual(result["Wellness"], [])
+
+
 
 if __name__ == "__main__":
     unittest.main()
