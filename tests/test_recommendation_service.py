@@ -86,7 +86,7 @@ class RecommendationSelectionTests(unittest.TestCase):
         ]
         with patch.object(
             recommendation_service, "get_activities_by_course", return_value=activities
-        ), patch.object(recommendation_service.random, "shuffle", side_effect=lambda values: None):
+        ), patch.object(random, "shuffle", side_effect=lambda values: None):
             result = recommendation_service.get_recommended_activities("CSE", 30)
 
         self.assertEqual(result[0]["id"], "matched")
@@ -129,7 +129,7 @@ class RecommendationSelectionTests(unittest.TestCase):
         ]
         with patch.object(recommendation_service, "get_activity_logs_by_student", return_value=logs), \
              patch.object(recommendation_service, "get_activities_by_course", return_value=activities), \
-             patch.object(recommendation_service.random, "shuffle", side_effect=lambda values: None):
+             patch.object(random, "shuffle", side_effect=lambda values: None):
             result = recommendation_service.get_personalized_recommendations("student-1", "CSE", 30)
 
         self.assertEqual([item["id"] for item in result], [2])
