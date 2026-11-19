@@ -17,7 +17,7 @@ python -m unittest discover -s tests -v
 - Cancelled classes are treated separately from ordinary timetable gaps.
 - Combined slots are sorted by start time.
 - Daily schedule output places free-time entries between class entries.
-- Days with no matching timetable entries produce an empty schedule.
+- Days with no matching timetable entries produce an empty schedule.\n- Recommendation tests cover preference scoring, duration limits, sorting, category filters, and completed-activity exclusion.\n- Report tests cover global versus student-scoped log retrieval and completed-activity aggregation.
 
 ## Extending coverage
 
