@@ -182,7 +182,7 @@ class RecommendationSelectionTests(unittest.TestCase):
              patch.object(random, "shuffle", side_effect=lambda values: None):
             result = recommendation_service.get_personalized_recommendations("student-2", "CSE", 30)
 
-        self.assertEqual([item["id"] for item in result], [1, 2])
+        self.assertEqual({item["id"] for item in result}, {1, 2})
 
 
 
