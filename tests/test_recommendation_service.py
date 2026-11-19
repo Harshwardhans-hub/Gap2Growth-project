@@ -1,5 +1,6 @@
 """Offline regression tests for Gap2Growth activity recommendations."""
 
+import random
 import sys
 import unittest
 from types import ModuleType
@@ -72,7 +73,7 @@ class RecommendationSelectionTests(unittest.TestCase):
     def test_filters_out_activities_longer_than_available_time(self):
         with patch.object(
             recommendation_service, "get_activities_by_course", return_value=self.activities
-        ), patch.object(recommendation_service.random, "shuffle", side_effect=lambda values: None):
+        ), patch.object(random, "shuffle", side_effect=lambda values: None):
             result = recommendation_service.get_recommended_activities("CSE", 60)
 
         self.assertEqual({item["id"] for item in result}, {"short", "long"})
